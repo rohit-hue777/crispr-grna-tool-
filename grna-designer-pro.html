@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>gRNA Designer</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef3f2;--surface:#fff;--ink:#12302b;--muted:#587069;--line:#cfdcd8;--guide:#1f5fbf;--pam:#c2185b;--ok:#1b7a55;--mid:#b27a00;--bad:#b3392b;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1c19;--surface:#152723;--ink:#e3efec;--muted:#8fa8a1;--line:#27403a;--guide:#6aa2ff;--pam:#ff6fa5;--ok:#4cc995;--mid:#e0b23a;--bad:#ff7d6b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e1c19;--surface:#152723;--ink:#e3efec;--muted:#8fa8a1;--line:#27403a;--guide:#6aa2ff;--pam:#ff6fa5;--ok:#4cc995;--mid:#e0b23a;--bad:#ff7d6b;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.55 "IBM Plex Sans",system-ui,sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 18px 60px}
+h1{font-size:clamp(28px,5vw,40px);line-height:1.1;margin:0 0 6px;font-weight:600;letter-spacing:-.02em}
+h2{font-size:16px;margin:18px 0 6px;font-weight:600}
+.sub{color:var(--muted);max-width:64ch;margin:0 0 22px}
+.mono,textarea,.pre{font-family:"IBM Plex Mono",ui-monospace,monospace}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px}
+.grid{display:grid;grid-template-columns:1.3fr 1fr;gap:16px}
+@media(max-width:800px){.grid{grid-template-columns:1fr}}
+label{display:block;font-weight:500;margin:0 0 4px;font-size:14px}
+textarea{width:100%;resize:vertical;font-size:13px;line-height:1.5;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:10px;word-break:break-all}
+#seq{height:150px}#bg{height:70px}
+select,input[type=number],input[type=text]{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:7px 8px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.chk{display:flex;gap:8px;align-items:center;margin:6px 0;font-size:14px}.chk label{margin:0;font-weight:400}
+.chk input{accent-color:var(--guide)}
+button{font:inherit;font-weight:500;border-radius:4px;border:1px solid var(--ink);padding:8px 14px;cursor:pointer;background:var(--ink);color:var(--bg)}
+button.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+button.sm{padding:2px 8px;font-size:12px}
+button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,th:focus-visible{outline:2px solid var(--guide);outline-offset:2px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center}
+.stat{margin:22px 0 10px;color:var(--muted)}.stat b{color:var(--ink)}
+.map{position:relative;height:56px;background:var(--surface);border:1px solid var(--line);border-radius:6px;margin-bottom:14px}
+.map .mid{position:absolute;left:0;right:0;top:50%;border-top:1px dashed var(--line)}
+.tick{position:absolute;width:3px;border-radius:2px;cursor:pointer;opacity:.85}
+.tick.plus{top:6px;height:22px}.tick.minus{bottom:6px;height:22px}
+.tick.sel{outline:2px solid var(--pam);opacity:1;z-index:2}
+.cds{position:absolute;top:0;bottom:0;background:color-mix(in srgb,var(--guide) 10%,transparent);pointer-events:none}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:900px}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-weight:600;font-size:13px;color:var(--muted);cursor:pointer;user-select:none}
+th[aria-sort]::after{content:attr(data-dir);margin-left:4px}
+tr.sel td{background:color-mix(in srgb,var(--guide) 10%,transparent)}
+tbody tr{cursor:pointer}
+.g{color:var(--guide)}.p{color:var(--pam);font-weight:500}
+.bar{display:inline-block;height:8px;border-radius:4px;vertical-align:middle;margin-right:6px}
+.chip{display:inline-block;font-size:12px;border:1px solid var(--bad);color:var(--bad);border-radius:10px;padding:0 7px;margin-right:4px}
+.note{color:var(--muted);font-size:13px;margin-top:14px;max-width:84ch}
+.err{color:var(--bad);margin-top:8px;font-size:14px}
+.empty{padding:26px;text-align:center;color:var(--muted)}
+.pre{font-size:13px;line-height:1.7;overflow-x:auto;white-space:pre;padding:8px 10px;background:var(--bg);border:1px solid var(--line);border-radius:4px}
+mark{background:none;color:var(--bad);font-weight:600;text-decoration:underline}
+.ol{display:flex;gap:8px;align-items:center;margin:4px 0;flex-wrap:wrap}.ol span:first-child{width:110px;color:var(--muted);font-size:13px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:800px){.two{grid-template-columns:1fr}}
+#csvbox{display:none;margin-top:10px;height:110px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>gRNA Designer</h1>
+<p class="sub">Find guide RNAs, scan for off-target sites in your own sequences, see where each guide cuts, and get cloning oligos. Everything runs in your browser; nothing is uploaded.</p>
+
+<div class="grid">
+  <div class="panel">
+    <label for="seq">Target sequence (plain DNA or FASTA)</label>
+    <textarea id="seq" spellcheck="false"></textarea>
+    <div id="seqinfo" class="note" style="margin:6px 0 10px"></div>
+    <label for="bg">Off-target background (optional)</label>
+    <textarea id="bg" spellcheck="false" placeholder="Paste other sequences to check against, such as paralogs or a genomic region (FASTA allowed). The target itself is always searched."></textarea>
+    <div class="actions">
+      <button id="run">Find guides</button>
+      <button class="ghost" id="sample">Load sample (EGFP)</button>
+      <button class="ghost" id="clear">Clear</button>
+      <span id="prog" class="note" style="margin:0"></span>
+    </div>
+    <div id="err" class="err" role="alert"></div>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <div><label for="enz">Enzyme</label><select id="enz"><option value="spcas9">SpCas9 (NGG)</option><option value="sacas9">SaCas9 (NNGRRT)</option><option value="cas12a">Cas12a (TTTV)</option><option value="custom">Custom PAM</option></select></div>
+      <div><label for="pam">PAM (IUPAC)</label><input id="pam" type="text" value="NGG" class="mono"></div>
+    </div>
+    <div class="row">
+      <div><label for="len">Guide length</label><input id="len" type="number" min="16" max="30" value="20"></div>
+      <div><label for="side">PAM position</label><select id="side"><option value="3">3′ of guide</option><option value="5">5′ of guide</option></select></div>
+    </div>
+    <div class="row">
+      <div><label for="gcmin">GC min %</label><input id="gcmin" type="number" min="0" max="100" value="35"></div>
+      <div><label for="gcmax">GC max %</label><input id="gcmax" type="number" min="0" max="100" value="75"></div>
+    </div>
+    <div class="row">
+      <div><label for="minon">Min on-target score</label><input id="minon" type="number" min="0" max="100" value="0"></div>
+      <div><label for="minspec">Min specificity</label><input id="minspec" type="number" min="0" max="100" value="0"></div>
+    </div>
+    <div class="row">
+      <div><label for="cs">CDS start (bp, optional)</label><input id="cs" type="number" min="1" placeholder="e.g. 1"></div>
+      <div><label for="ce">CDS end (bp)</label><input id="ce" type="number" min="1" placeholder="e.g. 720"></div>
+    </div>
+    <div class="row">
+      <div><label for="mm">Max mismatches searched</label><select id="mm"><option>2</option><option selected>3</option><option>4</option></select></div>
+      <div></div>
+    </div>
+    <div class="chk"><input type="checkbox" id="hide" checked><label for="hide">Hide guides with warnings (TTTT, GGGG, homopolymers, extreme GC, BbsI or BsmBI sites)</label></div>
+  </div>
+</div>
+
+<div id="out" hidden>
+  <div class="stat" id="stat"></div>
+  <div class="map" id="map" aria-label="Cut sites along the target. Plus-strand guides above the line, minus-strand below. Shaded area is the CDS."><div class="mid"></div></div>
+  <div class="tw"><table id="tbl"><thead><tr>
+    <th data-k="rank" tabindex="0" title="On-target × specificity">#</th><th data-k="guide" tabindex="0">Guide + PAM</th><th data-k="strand" tabindex="0">Strand</th><th data-k="cut" tabindex="0" title="Cut falls after this base">Cut</th><th data-k="cds" tabindex="0">CDS %</th><th data-k="gc" tabindex="0">GC %</th><th data-k="on" tabindex="0">On-target</th><th data-k="spec" tabindex="0">Specificity</th><th data-k="ot" tabindex="0" title="Off-target sites with 1, 2, 3 mismatches">Off-targets 1/2/3 mm</th><th data-k="flags" tabindex="0">Warnings</th>
+  </tr></thead><tbody id="tb"></tbody></table></div>
+  <div class="actions">
+    <button id="copy">Copy table as CSV</button>
+    <button class="ghost" id="copyf">Copy top 10 as FASTA</button>
+  </div>
+  <textarea id="csvbox" readonly aria-label="Text to copy"></textarea>
+
+  <div id="detail" class="panel" style="margin-top:16px" hidden>
+    <h2 id="dh" style="margin-top:0"></h2>
+    <div id="ctx" class="pre"></div>
+    <div class="two">
+      <div>
+        <h2>Cloning oligos</h2>
+        <div class="row" style="grid-template-columns:1fr;margin-bottom:6px"><select id="vec" aria-label="Vector"><option value="bbs">pX330 / pX458 (BbsI)</option><option value="bsm">lentiCRISPR v2 / lentiGuide (BsmBI)</option><option value="t7">T7 in vitro transcription primer</option></select></div>
+        <div id="oligos"></div>
+      </div>
+      <div>
+        <h2>Closest off-target sites</h2>
+        <div id="ots"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="note">On-target is a rule-of-thumb score (GC balance, 3′ base, seed GC, homopolymers), not a trained model such as Rule Set 2 or DeepSpCas9. Specificity uses the MIT (Hsu 2013) mismatch weights, exact for SpCas9 with 20-nt guides and approximate otherwise, and only sees sequences you paste. It is not a genome-wide search, so confirm your final picks in CRISPOR or Cas-OFFinder before ordering.</p>
+</div>
+
+<script>
+const IUPAC={A:"A",C:"C",G:"G",T:"T",N:"[ACGT]",R:"[AG]",Y:"[CT]",S:"[GC]",W:"[AT]",K:"[GT]",M:"[AC]",V:"[ACG]",H:"[ACT]",D:"[AGT]",B:"[CGT]"};
+const SAMPLE="ATGGTGAGCAAGGGCGAGGAGCTGTTCACCGGGGTGGTGCCCATCCTGGTCGAGCTGGACGGCGACGTAAACGGCCACAAGTTCAGCGTGTCCGGCGAGGGCGAGGGCGATGCCACCTACGGCAAGCTGACCCTGAAGTTCATCTGCACCACCGGCAAGCTGCCCGTGCCCTGGCCCACCCTCGTGACCACCCTGACCTACGGCGTGCAGTGCTTCAGCCGCTACCCCGACCACATGAAGCAGCACGACTTCTTCAAGTCCGCCATGCCCGAAGGCTACGTCCAGGAGCGCACCATCTTCTTCAAGGACGACGGCAACTACAAGACCCGCGCCGAGGTGAAGTTCGAGGGCGACACCCTGGTGAACCGCATCGAGCTGAAGGGCATCGACTTCAAGGAGGACGGCAACATCCTGGGGCACAAGCTGGAGTACAACTACAACAGCCACAACGTCTATATCATGGCCGACAAGCAGAAGAACGGCATCAAGGTGAACTTCAAGATCCGCCACAACATCGAGGACGGCAGCGTGCAGCTCGCCGACCACTACCAGCAGAACACCCCCATCGGCGACGGCCCCGTGCTGCTGCCCGACAACCACTACCTGAGCACCCAGTCCGCCCTGAGCAAAGACCCCAACGAGAAGCGCGATCACATGGTCCTGCTGGAGTTCGTGACCGCCGCCGGGATCACTCTCGGCATGGACGAGCTGTACAAG";
+const PRESETS={spcas9:{pam:"NGG",len:20,side:"3"},sacas9:{pam:"NNGRRT",len:21,side:"3"},cas12a:{pam:"TTTV",len:23,side:"5"}};
+const W=[0,0,.014,0,0,.395,.317,0,.389,.079,.445,.508,.613,.851,.732,.828,.615,.804,.685,.583];
+const $=id=>document.getElementById(id);
+const rc=s=>s.split("").reverse().map(c=>({A:"T",T:"A",G:"C",C:"G"})[c]||"N").join("");
+const gcPct=g=>[...g].filter(c=>c==="G"||c==="C").length/g.length*100;
+const clean=r=>r.replace(/^>.*$/gm,"").toUpperCase().replace(/[^A-Z]/g,"");
+let SEQ="",G=[],sel=-1,sortK="rank",sortDir=-1,C={};
+
+function onScore(g,side){
+  let s=60;const gc=gcPct(g);s-=Math.abs(gc-55)*0.8;
+  const sg=gcPct(side==="3"?g.slice(-10):g.slice(0,10));if(sg<30||sg>80)s-=10;
+  const e=side==="3"?g[g.length-1]:g[0];if(e==="G")s+=10;else if(e==="T")s-=6;
+  if(/(.)\1{3}/.test(g))s-=8;if(/GGGG/.test(g))s-=10;
+  return Math.max(0,Math.min(100,Math.round(s+30)));
+}
+function wsite(mp,L,side){
+  const n=mp.length;if(!n)return 1;
+  let p=1;mp.forEach(i=>{const w=side==="3"?(i-(L-20)<0?0:W[i-(L-20)]):W[19-Math.min(i,19)];p*=1-w});
+  let t=1;if(n>1){const d=(mp[n-1]-mp[0])/(n-1);t=1/(((19-d)/19)*4+1)}
+  return p*t/(n*n);
+}
+function flagsOf(g){
+  const f=[];if(g.includes("TTTT"))f.push("TTTT");if(/GGGG/.test(g))f.push("GGGG");if(/(.)\1{4}/.test(g))f.push("homopolymer");
+  const gc=gcPct(g);if(gc<30)f.push("low GC");if(gc>75)f.push("high GC");
+  if(/GAAGAC|GTCTTC/.test(g))f.push("BbsI site");if(/CGTCTC|GAGACG/.test(g))f.push("BsmBI site");return f;
+}
+function sitesOf(s,si,c,re){
+  const L=c.len,P=c.pam.length,after=c.side==="3",out=[];
+  for(const st of["+","-"]){const t=st==="+"?s:rc(s),n=t.length;
+    for(let i=0;i+L+P<=n;i++){
+      const pam=after?t.substr(i+L,P):t.substr(i,P);if(!re.test(pam))continue;
+      const gs=after?i:i+P,x=t.substr(gs,L);if(x.includes("N"))continue;
+      out.push({s:x,pam,si,st,gs,f0:st==="+"?gs:s.length-gs-L});
+    }}
+  return out;
+}
+
+async function run(){
+  const err=m=>{$("err").textContent=m};err("");
+  const seq=clean($("seq").value);
+  if(!seq)return err("Paste a DNA sequence first, or load the sample.");
+  if(/[^ACGT]/.test(seq))return err("Your target has letters other than A, C, G, T (for example N). Remove them and try again.");
+  const pam=$("pam").value.toUpperCase().trim();
+  if(!pam||/[^ACGTNRYSWKMVHDB]/.test(pam))return err("PAM can only use IUPAC letters such as A, C, G, T, N, R, V.");
+  const len=+$("len").value;if(!(len>=16&&len<=30))return err("Guide length must be between 16 and 30.");
+  const bgs=$("bg").value.split(/^>.*$/m).map(clean).filter(Boolean);
+  if(bgs.reduce((a,s)=>a+s.length,0)>1.5e6)return err("Background is over 1.5 million bases. Paste a smaller region.");
+  C={pam,len,side:$("side").value,gcmin:+$("gcmin").value,gcmax:+$("gcmax").value,mm:+$("mm").value,
+     minon:+$("minon").value,minspec:+$("minspec").value,hide:$("hide").checked,cs:+$("cs").value||0,ce:+$("ce").value||0};
+  const re=new RegExp("^"+[...pam].map(x=>IUPAC[x]).join("")+"$"),n=seq.length;SEQ=seq;
+  const tsites=sitesOf(seq,0,C,re);
+  let all=tsites;bgs.forEach((s,i)=>{all=all.concat(sitesOf(s,i+1,C,re))});
+  const cand=[];
+  for(const x of tsites){
+    const gc=gcPct(x.s);if(gc<C.gcmin||gc>C.gcmax)continue;
+    const fl=flagsOf(x.s);if(C.hide&&fl.length)continue;
+    const on=onScore(x.s,C.side);if(on<C.minon)continue;
+    cand.push({guide:x.s,pam:x.pam,strand:x.st,gs:x.gs,f0:x.f0,gc:Math.round(gc*10)/10,on,flags:fl});
+  }
+  G=[];
+  for(let gi=0;gi<cand.length;gi++){
+    const g=cand[gi],ot=[0,0,0,0,0];let sum=0,hits=[];
+    for(const x of all){
+      if(x.si===0&&x.st===g.strand&&x.gs===g.gs)continue;
+      let m=0;const mp=[];
+      for(let i=0;i<len;i++)if(x.s[i]!==g.guide[i]){if(++m>C.mm)break;mp.push(i)}
+      if(m>C.mm)continue;
+      ot[m]++;sum+=wsite(mp,len,C.side);hits.push({m,mp,x});
+      if(hits.length>60){hits.sort((a,b)=>a.m-b.m);hits.length=12}
+    }
+    hits.sort((a,b)=>a.m-b.m);g.hits=hits.slice(0,10);g.ot=ot;
+    g.spec=Math.round(100/(1+sum));g.rank=Math.round(g.on*g.spec/100);g.otk=ot[0]*1e9+ot[1]*1e6+ot[2]*1e3+ot[3];
+    const L=len,P=pam.length;
+    g.cut=C.side==="3"?(g.strand==="+"?g.gs+L-3:g.f0+3):(g.strand==="+"?g.gs+18:g.f0+L-18);
+    g.cds=(C.cs&&C.ce&&g.cut>=C.cs&&g.cut<=C.ce)?Math.round((g.cut-C.cs)/(C.ce-C.cs+1)*1000)/10:null;
+    g.pamRight=(g.strand==="+")===(C.side==="3");g.ps=g.pamRight?g.f0+L:g.f0-P;
+    if(g.spec>=C.minspec)G.push(g);
+    if(gi%15===0){$("prog").textContent=`Scanning off-targets ${gi+1}/${cand.length}`;await new Promise(r=>setTimeout(r,0))}
+  }
+  $("prog").textContent="";G.forEach((g,i)=>g._id=i);sel=-1;sortK="rank";sortDir=-1;$("detail").hidden=true;render();
+}
+
+const val=(g,k)=>k==="ot"?g.otk:k==="flags"?g.flags.length:k==="cds"?(g.cds===null?-1:g.cds):g[k];
+const sorted=()=>[...G].sort((a,b)=>{const x=val(a,sortK),y=val(b,sortK);return(x<y?-1:x>y?1:0)*sortDir});
+const color=s=>s>=70?"var(--ok)":s>=50?"var(--mid)":"var(--bad)";
+const gp=(g,pam,side)=>side==="3"?`<span class="g">${g}</span><span class="p">${pam}</span>`:`<span class="p">${pam}</span><span class="g">${g}</span>`;
+const cell=v=>`<span class="bar" style="width:${v*.5}px;background:${color(v)}"></span>${v}`;
+
+function render(){
+  const list=sorted(),n=SEQ.length;$("out").hidden=false;
+  $("stat").innerHTML=`<b>${G.length}</b> guides pass your filters in <b>${n.toLocaleString()}</b> bp, searched against ${(($("bg").value.trim()?"your background plus ":"")+"the target itself")} (up to ${C.mm} mismatches).`;
+  const map=$("map");map.querySelectorAll(".tick,.cds").forEach(t=>t.remove());
+  if(C.cs&&C.ce){const d=document.createElement("div");d.className="cds";d.style.left=(C.cs/n*100)+"%";d.style.width=((C.ce-C.cs+1)/n*100)+"%";map.appendChild(d)}
+  if(!list.length){$("tb").innerHTML='<tr><td colspan="10" class="empty">No guides passed your filters. Widen the GC range, lower the score limits, or untick the warnings filter.</td></tr>';return}
+  $("tb").innerHTML=list.map((r,i)=>`<tr data-i="${r._id}" class="${r._id===sel?"sel":""}"><td>${i+1}</td><td class="mono">${gp(r.guide,r.pam,C.side)}</td><td>${r.strand}</td><td>${r.cut}</td><td>${r.cds===null?"–":r.cds}</td><td>${r.gc}</td><td>${cell(r.on)}</td><td>${cell(r.spec)}</td><td>${r.ot[1]} / ${r.ot[2]} / ${r.ot[3]}${r.ot[0]?` <span class="chip">${r.ot[0]} exact copy</span>`:""}</td><td>${r.flags.map(f=>`<span class="chip">${f}</span>`).join("")||"–"}</td></tr>`).join("");
+  list.forEach(r=>{const t=document.createElement("div");t.className="tick "+(r.strand==="+"?"plus":"minus")+(r._id===sel?" sel":"");
+    t.style.left=(r.cut/n*100)+"%";t.style.background=color(r.rank);t.title=`${r.guide} (${r.strand}, cut ${r.cut}, on ${r.on}, spec ${r.spec})`;t.dataset.i=r._id;map.appendChild(t)});
+  document.querySelectorAll("th").forEach(th=>{if(th.dataset.k===sortK){th.setAttribute("aria-sort",sortDir>0?"ascending":"descending");th.dataset.dir=sortDir>0?"▲":"▼"}else{th.removeAttribute("aria-sort");th.dataset.dir=""}});
+  if(sel>=0)detail();
+}
+
+function oligos(g){
+  const x=g.guide,t7=$("vec").value==="t7";
+  if(C.side!=="3"&&!t7)return `<p class="note" style="margin:0">Cas12a crRNA cloning depends on your vector. Use the DNA spacer below and add your vector’s overhangs.</p><div class="ol"><span>Spacer (DNA)</span><span class="mono">${x}</span></div>`;
+  const rows=[];
+  if(t7)rows.push(["T7 forward primer","TAATACGACTCACTATAG"+x+"GTTTTAGAGCTAGAAATAGCAAG"]);
+  else{const hasG=x[0]==="G";rows.push(["Top oligo","CACC"+(hasG?"":"G")+x],["Bottom oligo","AAAC"+rc(x)+(hasG?"":"C")]);}
+  rows.push(["Spacer (RNA)",x.replace(/T/g,"U")]);
+  const note=t7?"Pair with your scaffold reverse primer to make the IVT template.":($("vec").value==="bbs"?"Anneal the two oligos, then clone into the BbsI-cut vector.":"Anneal the two oligos, then clone into the BsmBI-cut vector.");
+  return rows.map(([a,b])=>`<div class="ol"><span>${a}</span><span class="mono" style="word-break:break-all">${b}</span><button class="ghost sm cp" data-t="${b}">Copy</button></div>`).join("")+`<p class="note" style="margin:6px 0 0">${note}${x[0]!=="G"&&!t7?" A G is added at the 5′ end so the U6 promoter starts well.":""}</p>`;
+}
+function detail(){
+  const g=G.find(r=>r._id===sel);if(!g)return;$("detail").hidden=false;
+  $("dh").textContent=`${g.guide} ${g.pam}  ·  on-target ${g.on}, specificity ${g.spec}`;
+  const L=C.len,P=C.pam.length,a=Math.max(0,Math.min(g.f0,g.ps)-18),b=Math.min(SEQ.length,Math.max(g.f0+L,g.ps+P)+18);
+  let h="",cur="",buf="";
+  for(let i=a;i<b;i++){const k=(i>=g.f0&&i<g.f0+L)?"g":(i>=g.ps&&i<g.ps+P)?"p":"";if(k!==cur){if(buf)h+=cur?`<span class="${cur}">${buf}</span>`:buf;buf="";cur=k}buf+=SEQ[i]}
+  h+=cur?`<span class="${cur}">${buf}</span>`:buf;
+  $("ctx").innerHTML=`${a+1} ${h} ${b}   (forward strand; guide is on the ${g.strand} strand; cut after base ${g.cut}${g.cds!==null?`, ${g.cds}% into CDS`:""})`;
+  $("oligos").innerHTML=oligos(g);
+  $("ots").innerHTML=g.hits.length?g.hits.map(o=>{
+    const al=[...o.x.s].map((c,i)=>c!==g.guide[i]?`<mark>${c}</mark>`:c).join("");
+    return `<div class="pre" style="margin-bottom:6px">${o.m} mm  ${o.x.si===0?"target":"background "+o.x.si}, ${o.x.st} strand, base ${o.x.f0+1}\n${g.guide}\n${al}</div>`}).join(""):`<p class="note" style="margin:0">No sites with up to ${C.mm} mismatches in the sequences you provided.</p>`;
+}
+
+function csv(){return "rank,guide,pam,strand,cut,cds_pct,gc_pct,on_target,specificity,ot_0mm,ot_1mm,ot_2mm,ot_3mm,ot_4mm,warnings\n"+sorted().map((r,i)=>[i+1,r.guide,r.pam,r.strand,r.cut,r.cds===null?"":r.cds,r.gc,r.on,r.spec,...r.ot,r.flags.join(";")].join(",")).join("\n")}
+async function copyText(t,btn){
+  const old=btn.textContent;
+  try{await navigator.clipboard.writeText(t);btn.textContent="Copied";setTimeout(()=>btn.textContent=old,1400)}
+  catch(e){const b=$("csvbox");b.style.display="block";b.value=t;b.select();btn.textContent="Select and copy below";setTimeout(()=>btn.textContent=old,2500)}
+}
+function upd(){const s=clean($("seq").value);$("seqinfo").textContent=s?`${s.length.toLocaleString()} bp, ${gcPct(s).toFixed(1)}% GC`:"No sequence yet."}
+
+$("run").onclick=run;
+$("clear").onclick=()=>{$("seq").value="";$("bg").value="";$("out").hidden=true;$("err").textContent="";upd()};
+$("sample").onclick=()=>{$("seq").value=">EGFP\n"+SAMPLE;$("cs").value=1;$("ce").value=SAMPLE.length;upd();run()};
+$("enz").onchange=()=>{const p=PRESETS[$("enz").value];if(p){$("pam").value=p.pam;$("len").value=p.len;$("side").value=p.side}};
+$("pam").oninput=()=>{$("enz").value="custom"};
+$("seq").oninput=upd;upd();
+$("vec").onchange=()=>{if(sel>=0)detail()};
+$("tb").onclick=e=>{const tr=e.target.closest("tr");if(!tr||tr.dataset.i===undefined)return;sel=+tr.dataset.i;render();$("detail").scrollIntoView({block:"nearest",behavior:"smooth"})};
+$("map").onclick=e=>{const t=e.target.closest(".tick");if(!t)return;sel=+t.dataset.i;render()};
+$("detail").onclick=e=>{const b=e.target.closest(".cp");if(b)copyText(b.dataset.t,b)};
+const th=document.querySelector("thead");
+th.addEventListener("click",e=>{const h=e.target.closest("th");if(!h)return;const k=h.dataset.k;
+  if(sortK===k)sortDir*=-1;else{sortK=k;sortDir=(k==="guide"||k==="strand"||k==="cut")?1:-1}render()});
+th.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();e.target.click()}});
+$("copy").onclick=()=>copyText(csv(),$("copy"));
+$("copyf").onclick=()=>copyText(sorted().slice(0,10).map((r,i)=>`>guide${i+1}_${r.strand}_cut${r.cut}_on${r.on}_spec${r.spec}\n${r.guide}`).join("\n"),$("copyf"));
+</script>
+</body>
+</html>
